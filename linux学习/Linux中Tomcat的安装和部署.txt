@@ -1,0 +1,44 @@
+三、Linux中Tomcat的安装和部署
+
+1、准备好一个HelloWorld的web工程
+
+2、测试通过后，将web工程打包导出成war包
+
+3、复制Tomcat到Linux中并解压，如果是zip格式的，用如下命令解压:
+
+unzip. apache-tpmcat- -7.0. 47. zip
+
+4、将war包复制到tomcat中的webapps文件夹下
+
+5、启动Tomcat    ./startup.sh  
+
+http://localhost:8080/
+
+
+a、进入Tomcat的安装目录启动Tomcat,  
+ ./shutdown. sh关闭Tomcat
+
+如果说没有权限，则要给startup. sh赋权限
+
+chmod u=rwx startup.sh
+chmod 777 startup.sh
+chmod 777 catalina.sh
+d、但star tup依赖于catalina.sh,所以这个文件也要有执行权限
+
+6、 启动成功后，可以在Linux里面启动火狐来访问试试(前提是Linux有桌面版)
+
+7、实际开发过程中可以在Windows中用浏览器远程访问Tomcat服务器
+
+8、如果Windows访问不了，可以关闭Linux中的防火墙试试:
+
+service iptables stop (关闭防火墙)
+
+service iptables start (开启防火墙)
+
+9、通常不能访问，是因为端口8080未开放，按照以下操作开放8080端口:
+
+a、vim编辑/etc/sysconfig/iptables 文件
+
+b、在文件的COMMIT之前加入如下代码:
+
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT
