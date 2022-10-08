@@ -1,0 +1,12 @@
+安装参考网站：
+https://www.cnblogs.com/fengyumeng/p/11133924.html
+
+
+安装依赖
+yum -y install gcc glibc-devel make ncurses-devel openssl-devel xmlto perl wget gtk2-devel binutils-devel
+
+由于rabbitmq是基于erlang语言开发的，所以必须先安装erlang
+安装erlang：
+
+erlang官网：
+https://www.erlang.org/downloads

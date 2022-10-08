@@ -1,0 +1,19 @@
+kibana下载地址：https://www.elastic.co/cn/downloads/past-releases/kibana-6-6-0
+安装参考：https://blog.csdn.net/cb2474600377/article/details/78963247
+
+1.上传文件 rz 
+2.解压
+tar -zxvf kibana-6.6.0-linux-x86_64.tar.gz
+3.修改文件名称
+mv kibana-6.6.0-linux-x86_64/ kibana
+4.修改 Kibana 配置文件（7,28 指的是行号）
+vim /usr/lib/jvm/kibana/config/kibana.yml
+授权远程访问
+	7  server.host: "0.0.0.0"
+指定elasticsearch 地址
+	28  elasticsearch.hosts: ["http://localhost:9200"]
+	
+5.启动
+
+cd /usr/lib/jvm/kibana/bin
+./kibana

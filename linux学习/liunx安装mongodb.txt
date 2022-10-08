@@ -1,0 +1,23 @@
+下载地址：https://www.mongodb.com/try/download/community?jmp=nav
+安装参考网站：https://blog.csdn.net/m0_37027631/article/details/99934697
+
+新建mongodb的软件目录、数据目录、日志目录
+mkdir -p /database/
+mkdir -p /data/mongodb/
+mkdir -p /binlog/mongodb
+
+上传、解压安装包 
+cd  /database/
+rz
+tar -zxvf mongodb-linux-s390x-rhel72-5.0.4.tgz
+
+修改安装包名称
+mv mongodb-linux-s390x-rhel72-5.0.4 mongodb
+
+在mongodb路径下启动数据库
+
+命令：bin/mongod --config=./mongodb.conf > /dev/null 2>&1 &
+
+通过 ps ax | grep mongod查看数据库启动情况
+
+配置mongodb.conf文件

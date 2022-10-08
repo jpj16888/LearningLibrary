@@ -1,0 +1,93 @@
+安装准备：
+在 CentOS 7安装docker要求系统为64位、系统内核版本为 3.10 以上，可以使用以下命令查看
+uname -r
+3.10.0-1160.el7.x86_64
+docker 依赖包安装 
+yum install -y yum-utils device-mapper-persistent-data.x86_64  lvm2
+
+安装阿里云docker服务
+yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo 
+
+
+一、用yum源安装
+1.查看是否已安装docker列表
+yum list installed | grep docker
+删除旧的docker版本
+yum -y remove docker docker-engine docker.io
+2.安装docker
+yum -y install docker
+3.启动docker
+systemctl start docker
+
+设置开机启动
+systemctl enable docker.service
+4.查看docker服务状态
+systemctl status docker
+
+看见这个active (running)，证明安装成功
+
+
+二、离线安装模式
+1.安装包官方地址：https://download.docker.com/linux/static/stable/x86_64/
+wget https://download.docker.com/linux/static/stable/x86_64/docker-20.10.9.tgz
+2.解压
+tar -zxvf docker-20.10.9.tgz
+3. 在/etc/systemd/system/目录下新增docker.service文件，内容如下，这样可以将docker注册为service服务
+
+[Unit]
+Description=Docker Application Container Engine
+Documentation=https://docs.docker.com
+After=network-online.target firewalld.service
+Wants=network-online.target
+  
+[Service]
+Type=notify
+# the default is not to use systemd for cgroups because the delegate issues still
+# exists and systemd currently does not support the cgroup feature set required
+# for containers run by docker
+ExecStart=/usr/lib/jvm/docker/dockerd --selinux-enabled=false --insecure-registry=127.0.0.1
+ExecReload=/bin/kill -s HUP $MAINPID
+# Having non-zero Limit*s causes performance problems due to accounting overhead
+# in the kernel. We recommend using cgroups to do container-local accounting.
+LimitNOFILE=infinity
+LimitNPROC=infinity
+LimitCORE=infinity
+# Uncomment TasksMax if your systemd version supports it.
+# Only systemd 226 and above support this version.
+#TasksMax=infinity
+TimeoutStartSec=0
+# set delegate yes so that systemd does not reset the cgroups of docker containers
+Delegate=yes
+# kill only the docker process, not all processes in the cgroup
+KillMode=process
+# restart the docker process if it exits prematurely
+Restart=on-failure
+StartLimitBurst=3
+StartLimitInterval=60s
+  
+[Install]
+WantedBy=multi-user.target
+
+此处的--insecure-registry=127.0.0.1（此处改成你私服ip）设置是针对有搭建了自己私服Harbor时允许docker进行不安全的访问，否则访问将会被拒绝。
+
+
+
+4.给docker.service文件添加执行权限 
+chmod +x /etc/systemd/system/docker.service 
+5.重新加载配置文件（每次有修改docker.service文件时都要重新加载下）
+systemctl daemon-reload  
+6.启动docker
+systemctl start docker
+7.设置开机启动
+systemctl enable docker.service
+8.查看docker服务状态
+systemctl status docker
+
+9.Docker 需要用户具有 sudo 权限，为了避免每次命令都输入sudo，可以把用户加入 Docker 用户组
+创建docker组
+sudo groupadd docker
+sudo usermod -aG docker $USER
+
+10.查看docker 信息
+docker version 或
+docker info

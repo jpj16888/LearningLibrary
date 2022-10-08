@@ -1,0 +1,58 @@
+1.安装依赖包
+yum -y install gcc gcc-c++ make zlib-devel pcre pcre-devel openssl-devel
+2.下载
+wget http://nginx.org/download/nginx-1.8.0.tar.gz
+3解压
+cd /usr/lib/jvm
+tar -zxvf nginx-1.8.0.tar.gz
+
+cd /usr/lib/jvm/nginx-1.10.3
+4.安装
+./configure  --prefix=/usr/lib/jvm/nginx 
+make  -j 4  
+make install
+5.启动服务
+cd /usr/lib/jvm/nginx/sbin
+./nginx
+浏览器输入服务器IP查看情况
+
+6.重新加载服务
+cd /usr/lib/jvm/nginx/sbin
+./nginx -s reload
+
+7.停止服务
+cd /usr/lib/jvm/nginx/sbin
+./nginx -s stop
+
+
+8.自动启动服务配置
+vim /etc/systemd/system/nginx.service
+把下面内容复制到nginx.service
+
+
+[Unit]
+Description=The nginx HTTP and reverse proxy server
+After=network.target remote-fs.target nss-lookup.target
+
+[Service]
+Type=forking
+PIDFile=/run/nginx.pid
+# Nginx will fail to start if /run/nginx.pid already exists but has the wrong
+# SELinux context. This might happen when running `nginx -t` from the cmdline.
+#  
+ExecStartPre=/usr/bin/ rm -rf /usr/lib/jvm/nginx/logs/nginx.pid
+ExecStartPre=/usr/lib/jvm/nginx/sbin/nginx -t
+ExecStart=/usr/lib/jvm/nginx/sbin/nginx
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecReload=/bin/kill -s HUP $MAINPID
+KillSignal=SIGQUITTimeoutStopSec=5
+KillMode=process
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+
+设置开机自动启动服务
+systemctl enable nginx
+
+上传打包好的dist.zip包，unzip解压后,把dist文件夹里面的文件移动到/usr/lib/jvm/nginx/html 里面，可以用IP地址访问即可

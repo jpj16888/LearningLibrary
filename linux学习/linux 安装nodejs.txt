@@ -1,0 +1,26 @@
+下载node地址：https://nodejs.org/en/download/
+参考安装地址：https://www.cnblogs.com/lelelong/p/10971619.html
+
+1.上传文件  node-v16.13.0-linux-x64.tar.xz
+2.解压
+xz -d XX.xz        #.xz解压命令
+tar -xvf  XX.tar   #.tar解压命令
+
+xz -d node-v16.13.0-linux-x64.tar.xz
+tar -xvf node-v16.13.0-linux-x64.tar
+
+3.修改文件夹名称
+mv node-v16.13.0-linux-x64/ node
+
+4.配置环境变量
+vim /etc/profile ，进入文件后，在最后面追加两条路径，如下
+
+export NODEJS_HOME=/usr/lib/jvm/node
+export PATH=$PATH:$NODEJS_HOME/bin
+
+5.文件生效
+source /etc/profile 
+
+6.验证结果：
+node -v
+v16.13.0
