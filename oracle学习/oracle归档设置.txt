@@ -1,0 +1,133 @@
+以dba身份登录
+sqlplus / as sysdba;
+--查是否归档,如是归档
+archive log list;
+
+--开启归档设置
+1.安全关闭数据库
+shutdown immediate;
+2.启动数据库到mount（挂载）状态
+startup mount;
+3.开启归档日志
+alter database archivelog;
+4.设置归档目录 （不指定归档默认存储位置 D:\app\Administrator\flash_recovery_area\orcl）
+alter system set LOG_ARCHIVE_DEST_1='LOCATION=E:\archivelog';  --- （执行此句后，在Windows系统文件夹中看看arc文件夹有没有创建成功，如果没有，则手动创建，在执行此语句）
+5.打开数据库
+alter database open;
+--相应目录检查是否生成arc文件
+alter system switch logfile; （如果提示数据库没开启，则先执行alter database open;）
+
+
+--关闭归档设置
+1.安全关闭数据库
+shutdown immediate;
+2.启动数据库到mount状态
+startup mount;
+3.关闭归档日志
+alter database noarchivelog;
+5.打开数据库
+alter database open;
+--查是否归档,如是归档
+archive log list;
+
+--查看归档参数
+SHOW PARAMETER log_archive;
+-- log_archive_dest_1  归档日志路径
+--log_archive_dest_state_1 归档日志状态 enable（开启）defer（关闭）
+
+--关闭log_archive_dest_state_10值的归档日志状态
+ALTER SYSTEM SET log_archive_dest_state_10 ='defer';
+--查看log_archive_dest_state_10值的归档日志状态
+show PARAMETERS log_archive_dest_state_10;--defer
+
+--手动强制切换日志
+ ALTER SYSTEM SWITCH LOGFILE;
+
+
+--在备份数据库时顺便备份归档日志的写法：
+backup tablespace sflj plus archivelog delete all input;
+--直接专门对数据库归档日志进行备份时使用：
+backup archivelog all delete all input;
+
+--手工直接删除磁盘上的归档日志，在archivelog delete all input时，会报错:
+--RMAN-06059: 没有找到预期的归档日志, 归档日志的丢失将影响可恢复性
+
+--处理方法如下:
+crosscheck archivelog all;
+或者 change archivelog all crosscheck;
+
+
+rman target /
+delete noprompt archivelog until time  'sysdate-7';
+
+若删除不掉，报RMAN-08137
+则可执行如下命令强制删除:
+RMAN>delete noprompt force archivelog until time  'sysdate-7';
+
+
+
+
+--1.查看空间占用率：
+select * from v$flash_recovery_area_usage; 
+--2.查看归档日志的存放地址：
+select * from v$recovery_file_dest; 
+--3.查看所有归档，未删除的归档日志 ：
+select count(*) from v$archived_log where archived='YES' and deleted='NO';
+--4.查看空间占用率，如果 ARCHIVED LOG 超过90%，Oracle随时有宕机的危险：
+select * from v$flash_recovery_area_usage; 
+--5.查看归档日志大小及使用情况：
+select * from v$recovery_file_dest;
+--6.查看现有日志 ：
+select group#, bytes, status from v$log;
+--7.列出所有归档redo日志文件的顺序和产生的时间：
+select sequence#,first_time from v$loghist;
+--8.查看v$archive_log：
+select * from v$archived_log; 
+--9.查看所有归档，未删除的归档日志：
+select count(*) from v$archived_log where archived='YES' and deleted='NO'; 
+
+
+
+
+查看快速恢复区参数
+
+SYS@Riven hey~J->show parameter recover
+
+NAME                                                   TYPE           VALUE
+----------------------------------------- -----------   ------------------------------
+db_recovery_file_dest                            string        
+db_recovery_file_dest_size                     big integer 
+db_unrecoverable_scn_tracking               boolean      TRUE
+recovery_parallelism                               integer        0 
+
+创建快速恢复路径
+
+[oracle@Riven ~]$ mkdir /u01/app/FAR
+
+先设置快速恢复区大小
+
+SYS@Riven hey~J->alter system set db_recovery_file_dest_size = 2G；
+
+System altered.
+
+SYS@Riven hey~J->alter system set db_recovery_file_dest='/u01/app/FAR';
+
+System altered.
+
+SYS@Riven hey~J->show parameter recover
+
+NAME                                                   TYPE           VALUE
+----------------------------------------- -----------   ------------------------------
+db_recovery_file_dest                            string          /u01/app/FAR
+db_recovery_file_dest_size                     big integer   2G
+db_unrecoverable_scn_tracking               boolean      TRUE
+recovery_parallelism                               integer        0 
+
+
+
+
+
+
+
+
+

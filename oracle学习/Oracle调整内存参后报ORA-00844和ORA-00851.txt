@@ -1,0 +1,53 @@
+﻿C:\Users\Administrator>sqlplus / as sysdba
+
+SQL*Plus: Release 11.2.0.4.0 Production on 星期日 11月 11 17:22:34 2018
+
+Copyright (c) 1982, 2013, Oracle.  All rights reserved.
+
+已连接到空闲例程。
+
+SQL> startup pfile='D:\app\Administrator\admin\orcl\pfile\init.ora.4302022133112'
+ORACLE 例程已经启动。
+
+Total System Global Area 6847938560 bytes
+Fixed Size                  2294256 bytes
+Variable Size            3657436688 bytes
+Database Buffers         3170893824 bytes
+Redo Buffers               17313792 bytes
+数据库装载完毕。
+数据库已经打开。
+SQL> create spfile from pfile='D:\app\Administrator\admin\orcl\pfile\init.ora.4302022133112';
+
+文件已创建。
+
+SQL> shutdown immediate
+数据库已经关闭。
+已经卸载数据库。
+ORACLE 例程已经关闭。
+SQL> startup
+ORACLE 例程已经启动。
+
+
+
+
+SQL>alter system set memory_target = 52430m scope = spfile;
+SQL>alter system set sga_max_size=30720M scope=spfile;
+SQL>alter system set sga_target=30720M scope=spfile;
+SQL>alter system set pga_aggregate_target=10240M scope=spfile;
+
+create spfile from pfile;
+
+create pfile from spfile;
+
+
+ show parameter pga
+ 
+ 
+ show parameter sga
+ 
+ show parameter spfile
+
+show parameter pfile
+ 
+ 
+show parameter  open_cursors; 

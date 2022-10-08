@@ -1,0 +1,33 @@
+1.首先以sysdba的身份登录上去  sqlplus sys/123 as sysdba;
+
+2.关闭数据库         shutdown immediate;
+
+3.以mount打来数据库   startup mount;
+
+4.设置session
+
+		ALTER SYSTEM ENABLE RESTRICTED SESSION;
+		ALTER SYSTEM SET JOB_QUEUE_PROCESSES=0;
+		ALTER SYSTEM SET AQ_TM_PROCESSES=0;
+ 
+5.启动数据库	alter database open;
+
+6.修改字符集
+	ALTER DATABASE CHARACTER SET AL32UTF8/ZHS16GBK;
+
+		这会可能会报错，提示我们的字符集：新字符集必须为旧字符集的超集，这时我们可以跳过超集的检查做更改：
+
+ALTER DATABASE character set INTERNAL_USE AL32UTF8/ZHS16GBK;
+
+这条语句就可以了，TERNAL_USE提供的帮助就会使oracle绕过了子集与超集的验证，这条语句和上面的语句内部操作时完全相同的。
+
+7.关闭，重新启动
+
+	shutdown immediate;
+	startup;
+
+8.查看oracle数据库的编码
+	select * from nls_database_parameters where parameter ='NLS_CHARACTERSET';
+
+ 
+

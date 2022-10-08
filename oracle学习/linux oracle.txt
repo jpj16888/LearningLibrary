@@ -1,0 +1,181 @@
+
+一：准备工作
+1.修改网卡配置文件改IP地址 
+	vim /etc/sysconfig/network-scripts/ifcfg-ens33 
+	重启网络服务 systemctl restart network
+
+2.开机自动关闭防火墙
+	systemctl disable firewalld.service(需要reboot)
+
+3.永久关闭Selinux 
+	vim /etc/selinux/config  把SELINUX=enforcing改为SELINUX=disabled
+
+4. 设置系统光盘开机自动挂载
+	vim  /etc/fstab  #在文档最后，添加以一下内容：
+	/dev/cdrom 			      /mnt			  iso9660 defaults        0 0
+	mount -a
+
+5.配置yum源  注意复制会有空格字符，会报错
+进入 cd /etc/yum.repos.d目录下 vim  CentOS7.repo
+内容如下:
+
+[CentOS7]
+name=CentOS-server
+baseurl=file:///mnt
+enabled=1
+gpgcheck=0
+
+下载阿里yum   wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+
+
+
+二：创建用户及安装目录，安装依赖包
+1、创建用户
+	groupadd oinstall
+	groupadd dba
+	useradd -g oinstall -G dba -m oracle
+	passwd oracle
+ 2、创建安装目录，解压文件
+	mkdir -p /ora/oracle
+	unzip -d /ora/ linux.x64_11gR2_database_1of2.zip
+	unzip -d /ora/ linux.x64_11gR2_database_2of2.zip
+	chown -R oracle:oinstall /ora
+	chmod 777 -R /ora
+ 
+ 
+ 3、安装oracle所需依赖和桌面组件，桌面组件有700多MB
+	yum -y install binutils compat compat-libstdc gcc gcc-c++ glibc glibc-devel ksh libaio libaio-devel libgcc libstdc++ libstdc++-devel libXi libXtst make sysstat unixODBC unixODBC-devel
+	yum -y groupinstall "GNOME Desktop" "Graphical Administration Tools"
+	yum -y install compat-libstdc++-33.i686
+	yum -y install yum list compat-libstdc++-33-3.2.3
+
+安装nginx
+wget http://nginx.org/download/nginx-1.8.0.tar.gz
+yum install -y gcc gcc-c++ ncurses-devel perl pcre pcre-devel zlib gzip zlib-devel
+cd nginx-1.8.0
+./configure
+make && make install
+
+
+三：修改系统内核等设置
+1、将服务器名写入到hosts文件，可以测试ping sername 是否返回127.0.0.1
+	echo '127.0.0.1 oracledb localhost localhost.localdomain' >> /etc/hosts
+	ping -c 3 oracledb
+2、修改内核（/etc/sysctl.conf），增加或修改以下内容
+	kernel.shmall ：
+	该参数控制可以使用的共享内存的总页数。Linux共享内存页大小为4KB,共享内存段的大小都是共享内存页大小的整数倍。一个共享内存段的最大大小是16G，那么需要共享内存页数是16GB/4KB=16777216KB/4KB=4194304（页），也就是64Bit系统下16GB物理内存，设置kernel.shmall = 4194304 符合要求。
+	kernel.shmmax：
+	是核心参数中最重要的参数之一，用于定义单个共享内存段的最大值。64位linux系统：可取的最大值为物理内存值-1byte，建议值为多于物理内存的一半，例如，如果为16GB物理内存，可取16*1024*1024*1024-1=17179869183。
+	kernel.shmmni：
+	该参数是共享内存段的最大数量。shmmni缺省值4096，一般肯定是够用了。
+	kernel.sem = 250 32000 100 128 的意思是：
+	250是参数semmsl的值，表示一个信号量集合中能够包含的信号量最大数目。
+	32000是参数semmns的值，表示系统内可允许的信号量最大数目。
+	100是参数semopm的值，表示单个semopm()调用在一个信号量集合上可以执行的操作数量。
+	128是参数semmni的值，表示系统信号量集合总数。
+
+3、以下适用于8G内存左右服务器配置，12G或者16G以上建议调整
+	vim /etc/sysctl.conf
+	
+	fs.aio-max-nr = 1048576
+	fs.file-max = 6815744
+	kernel.shmall = 2097152
+	kernel.shmmax = 4294967295
+	kernel.shmmni = 4096
+	kernel.sem = 250 32000 100 128
+	net.ipv4.ip_local_port_range = 9000 65500
+	net.core.rmem_default = 262144
+	net.core.rmem_max = 4194304
+	net.core.wmem_default = 262144
+	net.core.wmem_max = 1048576
+
+4、要使 /etc/sysctl.conf 更改立即生效，执行以下命令。
+	sysctl -p
+	
+5、修改认证模块
+	vim /etc/security/limits.conf
+	
+	oracle soft nproc 131072
+	oracle hard nproc 131072
+	oracle soft nofile 131072
+	oracle hard nofile 131072
+	oracle soft core unlimited
+	oracle hard core unlimited
+	oracle soft memlock 50000000
+	oracle hard memlock 50000000
+6、修改用户登录认证
+	vim /etc/pam.d/login
+	
+	session required /lib64/security/pam_limits.so
+	session required pam_limits.so
+	
+	注意  32位系统需要设置为/lib/security/pam_limits.so
+	      64位系统需要设置为/lib64/security/pam_limits.so 否则重启服务器后就会出现命令行无法登录，但是通过桌面方式能登录的情况。
+		  
+7、设置环境变量（ORACLE_HOME 设置为安装目录product下默认目录）
+	vim /etc/profile
+	
+	#oracle
+	export ORACLE_HOME=/ora/oracle/product/11.2.0/db_1
+	export ORACLE_SID=orcl
+	if [ $USER = "oracle" ]; then
+	if [ $SHELL = "/bin/ksh" ]; then
+	ulimit -p 16384
+	ulimit -n 65536
+	else
+	ulimit -u 16384 -n 65536
+	fi
+	fi
+	
+8、修改Oracle用户环境变量
+	vim /home/oracle/.bash_profile	
+	
+	export ORACLE_BASE=/ora/oracle
+	export ORACLE_HOME=$ORACLE_BASE/product/11.2.0/db_1
+	export ORACLE_SID=orcl
+	export ORACLE_TERM=xterm
+	export PATH=$ORACLE_HOME/bin:/usr/sbin:$PATH
+	export LD_LIBRARY_PATH=$ORACLE_HOME/lib:/lib:/usr/lib
+	export NLS_LANG=AMERICAN_AMERICA.ZHS16GBK
+	
+四：通过桌面方式安装Oracle
+
+1、使用oracle用户登录桌面，打开终端运行安装程序
+	cd /ora/database
+	./runInstaller
+
+2、解决乱码问题
+	mkdir -p /usr/share/fonts/zh_CN/TrueType
+	cd /usr/share/fonts/zh_CN/TrueType
+	rz 上传 zysong.ttf.zip
+	unzip zysong.ttf.zip
+	chmod -R 75 zysong.ttf
+	echo $LANG en_US.UTF-8
+	
+3、安装oracle11g时报错error in invoking target agent nmhs的解决办法
+
+	vim /ora/oracle/product/11.2.0/db_1/sysman/lib/ins_emagent.mk
+	vim里面搜索  MK_EMAGENT_NMECTL  添加 -lnnz11
+	 $(MK_EMAGENT_NMECTL)-lnnz11
+4.ora-19624 ora-19870  安装路径权限不足
+5.ORA-27072: File I/O error 处理  磁盘空间不足
+6.ORA-00959:表空间不存在
+7.ora-12705错误解决  export NLS_LANG=AMERICAN_AMERICA.ZHS16GBK
+
+3、ORACLE启动监听器
+(1)切换至oracle安装用户（一般为oracle）
+su - oracle
+(2)启动监听器
+lsnrctl start
+(3)停止监听器
+lsnrctl stop
+
+4、启动测试oracle：
+sqlplus /nolog
+
+
+
+
+
+
+

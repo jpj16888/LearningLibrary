@@ -1,0 +1,16 @@
+﻿cmd----regedit
+
+删除HKEY_LOCAL_MACHINE/SOFTWARE/ORACLE目录
+
+删除HKEY_LOCAL_MACHINE/SYSTEM/CurrentControlSet/Services中所有以Oracle和OraWeb开头的键
+
+删除HKEY_LOCAL_MACHINE/SYSTEM/CurrentControlSet/Services/Eventlog/Application中所有以Oracle开头的键
+
+删除HKEY_CLASSES_ROOT目录下所有以Ora，Oravcle，Orcl，EnumOra为前缀的键
+
+删除HKEY_CURRENT_USER/Software/Microsoft/Windows/CurrentVersion/Explorer/MenuOrder/Start menu/Programs中以Oracle开头的键
+
+删除HKEY_LOCAL_MACHINE/SOFTWARE/ODBC/ODBCINST.INI中除MicrosoftODB forOracle以外的所有含Oracle的键
+删除环境变量中path和classpath中含Oracle的路径。
+在开始中和桌面删除所有oracle图标和文件夹。
+删除所有oracle目录，包括c：//program files/oracle目录。你的oracle安装目录m
