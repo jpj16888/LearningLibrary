@@ -1,0 +1,87 @@
+﻿mysql 下载地址
+https://downloads.mysql.com/archives/community/
+
+https://mirrors.aliyun.com/mysql/
+
+https://cdn.mysql.com/archives/mysql-5.7/mysql-5.7.35-el7-x86_64.tar
+
+阿里云工具下载地址：
+https://developer.aliyun.com/mirror/?spm=a2c6h.13651102.J_5404914170.37.2eaa1b115vVCF8&utm_content=g_1000283990
+
+
+检查  mariadb
+ rpm -qa | grep  mariadb
+删除 
+yum remove mariadb-libs -y
+
+
+3.安装依赖
+yum install -y gcc-c++ bison-devel  ncurses-devel  bison perl perl-devel   boost boost-devel boost-doc  libaio
+
+3.新建MySQL的软件目录、数据目录、日志目录
+mkdir -p /database/ /data/mysql/ /log/mysql
+
+cd /database/
+1.上传解压
+rz
+tar -zxvf mysql-5.7.35-el7-x86_64.tar.gz
+
+mv mysql-5.7.35-el7-x86_64 mysql
+2.添加mysql组及用户
+groupadd mysql
+useradd -r -g mysql mysql  
+chown -R  mysql:mysql /database/ /data/mysql/ /log/mysql
+
+修改环境变量
+vim /etc/profile
+export  PATH=/database/mysql/bin:$PATH
+source /etc/profile
+
+cd /database/mysql/bin/
+./mysqld --initialize-insecure --user=mysql --datadir=/data/mysql --basedir=/database/mysql
+
+添加my.cnf配置文件
+vim /etc/my.cnf
+[mysqld]
+user=mysql
+port = 3306
+basedir =  /database/mysql
+datadir =  /data/mysql
+socket =  /tmp/mysql.sock
+[mysql]
+socket =  /tmp/mysql.sock
+
+
+准备mysql 启动脚本
+
+cd /database/mysql/support-files/
+cp mysql.server /etc/init.d/mysqld
+
+启动
+chkconfig --add mysqld
+chkconfig mysqld on
+service mysqld start
+
+设置mysql数据库root用户密码：
+
+mysql -uroot -p   回车 密码为空
+
+show databases;
+use mysql;
+update user set authentication_string=password(123456) where user="root";
+
+刷新权限（必须步骤）：flush privileges;　
+
+
+设置远程连接
+update user set host='%' where user='root' and host='localhost';
+刷新权限（必须步骤）：flush privileges;　
+quit;
+
+
+开启防火墙
+systemctl start firewalld.service 
+把3306端口在防火墙里开启
+firewall-cmd --permanent --zone=public --add-port=3306/tcp
+firewall-cmd --reload 
+
